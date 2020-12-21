@@ -21,8 +21,9 @@ log = logging.getLogger(__name__)
 
 MAX_SEED_LENGTH = 64
 
-VERSION_NUM = "0.3"
+VERSION_NUM = "0.4"
 
+LOOSE_FILE_PATH_LIST = ["./CharaInitParam.param", "./ItemLotParam.param", "./ShopLineupParam.param"]
 PTDE_GAMEPARAM_PATH_LIST = ["./GameParam.parambnd", "./param/GameParam/GameParam.parambnd"]
 DS1R_GAMEPARAM_PATH_LIST = ["./GameParam.parambnd.dcx", "./param/GameParam/GameParam.parambnd.dcx"]
 
@@ -133,7 +134,15 @@ class MainGUI:
         self.game_version_menu.bind("<<ComboboxSelected>>", lambda _: self.update_game_version())
         self.game_version_menu.config(width=30)
         self.game_version_menu.grid(row=1, column=2, sticky='EW', padx=2)
-        
+
+        self.nintendo_switch_bool = tk.BooleanVar()
+        self.nintendo_switch_bool.set(False)
+        self.nintendo_switch_bool.trace('w', lambda name, index, mode: self.update())
+        self.nintendo_switch_check = tk.Checkbutton(self.root, text="Nintendo Switch?",
+         variable=self.nintendo_switch_bool, onvalue=True, offvalue=False,
+         anchor=tk.W)
+        self.nintendo_switch_check.grid(row=1, column=3, padx=2, sticky='W')
+
         self.msg_area = tk.Text(self.root, width=76, height=19, state="disabled", background=self.root.cget('background'), wrap="word")
         self.msg_area.grid(row=2, column=0, columnspan=3, rowspan=9, padx=2, pady=2)
         self.msg_quit_button = tk.Button(self.root, text="Quit", command=self.quit_button)
@@ -573,7 +582,8 @@ class MainGUI:
                         raise ValueError(".dcx file does not appear to be DCX-compressed.")
                     content = dcx_handler.uncompress_dcx_content(content)
                 content_list = bnd_rebuilder.unpack_bnd(content)
-            except:
+            except Exception as e:
+                print(e)
                 self.msg_area.config(state="normal")
                 self.msg_area.delete(1.0, "end")
                 self.msg_area.insert("end", "\n\n")
@@ -598,7 +608,8 @@ class MainGUI:
 
             for index, (file_id, filepath, filedata) in enumerate(content_list):
                 if (filepath == "N:\FRPG\data\INTERROOT_win32\param\GameParam\CharaInitParam.param" or
-                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\CharaInitParam.param"):
+                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\CharaInitParam.param" or
+                 filepath == "N:\FRPG\data\INTERROOT_ns64\param\GameParam\CharaInitParam.param"):
                     chr_init_data = filedata
             
             
@@ -619,15 +630,18 @@ class MainGUI:
             
             for index, (file_id, filepath, filedata) in enumerate(content_list):
                 if (filepath == "N:\FRPG\data\INTERROOT_win32\param\GameParam\ItemLotParam.param" or
-                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\ItemLotParam.param"):
+                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\ItemLotParam.param" or
+                 filepath == "N:\FRPG\data\INTERROOT_ns64\param\GameParam\ItemLotParam.param"):
                     content_list[index] = (file_id, filepath, ilp_binary_export)
                 if (filepath == "N:\FRPG\data\INTERROOT_win32\param\GameParam\ShopLineupParam.param" or
-                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\ShopLineupParam.param"):
+                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\ShopLineupParam.param" or
+                 filepath == "N:\FRPG\data\INTERROOT_ns64\param\GameParam\ShopLineupParam.param"):
                     content_list[index] = (file_id, filepath, slp_binary_export)
                 if (filepath == "N:\FRPG\data\INTERROOT_win32\param\GameParam\CharaInitParam.param" or
-                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\CharaInitParam.param"):
-                     content_list[index] = (file_id, filepath, cip_binary_export)
-            new_content = bnd_rebuilder.repack_bnd(content_list)
+                 filepath == "N:\FRPG\data\INTERROOT_x64\param\GameParam\CharaInitParam.param" or
+                 filepath == "N:\FRPG\data\INTERROOT_ns64\param\GameParam\CharaInitParam.param"):
+                    content_list[index] = (file_id, filepath, cip_binary_export)
+            new_content = bnd_rebuilder.repack_bnd(content_list, nintendo_switch_format=self.nintendo_switch_bool.get())
             if is_remastered:
                 new_content = dcx_handler.compress_dcx_content(new_content)
             with open(gameparam_filepath, "wb") as f:

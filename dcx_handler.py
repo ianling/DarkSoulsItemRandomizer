@@ -114,16 +114,18 @@ def uncompress_dcx_content(content):
     
 if __name__ == "__main__":
     if len(sys.argv) < 2:
-        print("Usage: " + str(sys.argv[0]) + " <DCX File>")
+        print("Usage: " + str(sys.argv[0]) + " <File>")
     else:
         filename = sys.argv[1]
         if filename[-4:] == ".dcx":
-            uncomp_filename = filename[:-4]
+            result_filename = filename[:-4]
+            operation = uncompress_dcx_content
         else:
-            uncomp_filename = filename + ".undcx"
-        with open(filename, "rb") as f, open(uncomp_filename, "wb") as g:
+            result_filename = filename + ".dcx"
+            operation = compress_dcx_content
+        with open(filename, "rb") as f, open(result_filename, "wb") as g:
             file_content = f.read()
-            g.write(uncompress_dcx_content(file_content))
+            g.write(operation(file_content))
             g.close()
             
     
